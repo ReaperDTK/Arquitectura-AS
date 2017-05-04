@@ -43,11 +43,11 @@ El módulo `color` exporta las siguientes funciones:
 Imprimir mensajes
 -----------------
 
-[img1]: https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png
-[img2]: https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png
-[img3]: https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_bold.png
-[img4]: https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue_bold.png
-[img5]: https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/multi.png
+<img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png">
+<img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png">
+<img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_bold.png">
+<img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue_bold.png">
+<img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/multi.png">
 
 La función `print` imprime en el Terminal una cadena de caracteres. Además:
 - Imprime un `~n` después del mensaje.
@@ -59,10 +59,8 @@ Si queremos imprimir **sólo** un mensaje a color, o con un modo, haremos:
 color:print("Message", red).
 color:print("Message", bold).
 ```
-<center> ![img1] </center>
-<br>
-<center> ![img2] </center>
-<br>
+<center> <img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red.png"></center><br>
+<center><img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png"></center><br>
 
 - Si queremos imprimir un mensaje con **color** y un **modo**:
 
@@ -70,8 +68,7 @@ color:print("Message", bold).
 color:print("Message", [red, bold]).
 ```
 
-<center> ![img3] </center>
-<br>
+<center><img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_bold.png"></center><br>
 
 - Si queremos imprimir un mensaje con **color** y un **fondo**:
 
@@ -79,8 +76,7 @@ color:print("Message", [red, bold]).
 color:print("Message", [red, cyan]).
 ```
 
-<center> ![img4] </center>
-<br>
+<center><img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue_bold.png"></center><br>
 
 - Si queremos imprimir un mensaje con **color**, un **fondo** y un **modo**:
 
@@ -88,8 +84,7 @@ color:print("Message", [red, cyan]).
 color:print("Message", [red, cyan, bold]).
 ```
 
-<center> ![img5] </center>
-<br>
+<center> <img src=" https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/multi.png"> </center><br>
 
 - Nótese que si introducimos más de dos colores, empleará el primero como color de la fuente y el último como color de fondo. Sí conservará todos los modos:
 
