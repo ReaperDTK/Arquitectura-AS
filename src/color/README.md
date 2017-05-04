@@ -2,7 +2,8 @@
 # Color #
 
 ## Descripción
-Imprime cadenas de caracteres a color en línea de comandos en `erlang`. Los colores soportados son 17:
+Imprime cadenas de caracteres a color en línea de comandos en `erlang`. <br>
+Los colores soportados son:
 
 - `black`
 - `red`
@@ -47,12 +48,17 @@ La función `print` imprime en el Terminal una cadena de caracteres. Además:
 - Imprime un `~n` después del mensaje.
 - Restaura el color y modo por defecto después de imprimir el mensaje (i.e. como si no se hubiera llamado a la función).
 
-Si queremos imprimir **sólo** un mensaje a color, o con un modo, haremos:
+Si queremos imprimir **sólo** un mensaje a color, o con un modo:
 
 ```erlang
 color:print("Message", red).
 color:print("Message", bold).
 ```
+
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red.png"/>
+</p>
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png"/>
+</p>
 
 - Si queremos imprimir un mensaje con **color** y un **modo**:
 
@@ -60,11 +66,17 @@ color:print("Message", bold).
 color:print("Message", [red, bold]).
 ```
 
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_bold.png"/>
+</p>
+
 - Si queremos imprimir un mensaje con **color** y un **fondo**:
 
 ```erlang
 color:print("Message", [red, cyan]).
 ```
+
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue.png"/>
+</p>
 
 - Si queremos imprimir un mensaje con **color**, un **fondo** y un **modo**:
 
@@ -72,11 +84,17 @@ color:print("Message", [red, cyan]).
 color:print("Message", [red, cyan, bold]).
 ```
 
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue_bold.png"/>
+</p>
+
 - Nótese que si introducimos más de dos colores, empleará el primero como color de la fuente y el último como color de fondo. Sí conservará todos los modos:
 
 ```erlang
 color:print("Message", [red, cyan, bold, underline, black, italic, green]).
 ```
+
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/multi.png"/>
+</p>
 
 ## Demás funcionalidades
 
@@ -94,3 +112,8 @@ Modes = color:get_modes()
 color:print_available_colors()
 color:print_available_modes()
 ```
+
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/available_colors.png"/>
+</p>
+<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/available_modes.png"/>
+</p>
