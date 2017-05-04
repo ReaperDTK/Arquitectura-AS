@@ -55,19 +55,11 @@ color:print("Message", red).
 color:print("Message", bold).
 ```
 
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red.png"/>
-</p>
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/bold.png"/>
-</p>
-
 - Si queremos imprimir un mensaje con **color** y un **modo**:
 
 ```erlang
 color:print("Message", [red, bold]).
 ```
-
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_bold.png"/>
-</p>
 
 - Si queremos imprimir un mensaje con **color** y un **fondo**:
 
@@ -75,26 +67,17 @@ color:print("Message", [red, bold]).
 color:print("Message", [red, cyan]).
 ```
 
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue.png"/>
-</p>
-
 - Si queremos imprimir un mensaje con **color**, un **fondo** y un **modo**:
 
 ```erlang
 color:print("Message", [red, cyan, bold]).
 ```
 
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/red_blue_bold.png"/>
-</p>
-
 - Nótese que si introducimos más de dos colores, empleará el primero como color de la fuente y el último como color de fondo. Sí conservará todos los modos:
 
 ```erlang
 color:print("Message", [red, cyan, bold, underline, black, italic, green]).
 ```
-
-<p align="center"><img src ="https://github.com/ReaperDTK/Arquitectura-AS/blob/master/img/multi.png"/>
-</p>
 
 ## Demás funcionalidades
 
