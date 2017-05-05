@@ -5,7 +5,7 @@ Aunque se imprimen mensajes ,  no he usado todavía el modulo de colores.
 No esta implementado lo de los nombres de usuario , por ahora se utilizan los PID para identificar a los clientes.
 
 
-##Servidor##
+## Servidor
 
 Para iniciar el modulo server es necesario iniciar primero una shell de erlang de la siguiente manera
 
@@ -21,7 +21,7 @@ Para arrancar el servidor del chat `server:start()` y para cerrarlo `server:stop
 
 Para mas info sobre la implementación revisad los comentarios del código
 
-##Cliente ##
+## Cliente
 
 Para iniciar el modulo client es necesario iniciar primero una shell de erlang de la siguiente manera
 
@@ -42,4 +42,4 @@ Para mas info del funcionamiento, mirad los comentarios del código
 
 
 
-------------- 
+-------------
