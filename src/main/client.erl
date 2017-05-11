@@ -59,17 +59,19 @@ con_control(Loop, Name) ->
         PidServer ->
             ?IO:print_info("Connecting...\n") ,
             PidServer ! RegUserMsg,
-            wait_for_answer(Loop),
-            input_loop(Loop, Name)
+            case wait_for_answer() of
+                ok -> input_loop(Loop, Name);
+                _ -> connect_node(Loop)
+            end
     end.
 
-wait_for_answer(Loop) ->
+wait_for_answer() ->
     receive
         {ok, joined} ->
-            ?IO:print_info("Joined");
+            ?IO:print_info("Joined"), ok;
         {error, user_repeated} ->
             ?IO:print_error("There's already an user with that name. "),
-            connect_node(Loop)
+            error
     end.
 
 con_control_error(Loop, Name)->
@@ -91,7 +93,7 @@ input_loop(LLoop, Name)->
         {error, ERROR, I}-> ?IO:print_error(ERROR, I),
             input_loop(LLoop, Name);
         {exit, _} ->
-            LLoop ! stop, global:whereis_name(server) ! {disc, LLoop},  ok;
+            LLoop ! stop, global:whereis_name(server) ! {disc, LLoop},  ?IO:print_info("Good Bye!");
         {C, Args} ->
             global:whereis_name(server) ! {C, Args, Name},
             input_loop(LLoop, Name)
