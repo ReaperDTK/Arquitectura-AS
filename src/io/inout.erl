@@ -14,8 +14,12 @@
 ]).
 
 
+droplast([H|[]])-> [];
+droplast([H|T]) -> [H|droplast(T)].
+
+
 get_line()->
-    S=lists:droplast(io:get_line("")),
+    S=droplast(io:get_line("")),
     case S of
         "" -> empty;
         _->case string:chr(S,$/) of
