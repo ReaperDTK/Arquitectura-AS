@@ -7,7 +7,7 @@
     - *El proceso del servidor es capaz de crear salas en las que los usuarios de los clientes pueden comunicarse via broadcast.*
 - [x] **Nombre por usuario**
     - *El sistema le solicita al usuario un nombre con el que identificarse y será su nombre mientras esté en el programa.*
-- [ ] **Desconexión del usuario del programa**.
+- [x] **Desconexión del usuario del programa**.
     - *Logout, liberar nombre y avisar a sala.*
 - [ ] **Capacidad de cambiarse de servidor**
     - *El usuario se puede cambiar de servidor **(¿o sala?)** en cualquier momento*
