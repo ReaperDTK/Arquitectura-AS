@@ -24,6 +24,7 @@ connect_node(Loop)->
     ?IO:print_info("Server name@ip (/exit to quit) : "),
     case ?IO:get_line() of
         {exit, _} -> Loop ! stop, ok;
+        {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx"),connect_node(Loop);
         {msg, S} -> Server = list_to_atom(S),
             %% Intenta conectarse
             case net_kernel:connect_node(Server) of
@@ -94,6 +95,7 @@ input_loop(LLoop, Name)->
             input_loop(LLoop, Name);
         {exit, _} ->
             LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name},  ?IO:print_info("Good Bye!");
+          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name);
         {C, Args} ->
             global:whereis_name(server) ! {C, Args, Name},
             input_loop(LLoop, Name)

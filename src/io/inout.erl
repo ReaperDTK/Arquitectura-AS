@@ -10,7 +10,7 @@
 %% Comandos reconocidos
 -define(COMMANDS, [
     %% {comm_atom, string_representations, num_args}
-    {exit,"/exit",0}
+    {exit,"/exit",0},{help,"/help",0}
 ]).
 
 
