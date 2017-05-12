@@ -4,6 +4,7 @@
 -export([start/0, stop/0]).
 
 -define(IO, inout).
+-define(AUX,aux).
 
 %% Llama al comando epmd -names para comprobar si epmd se esta ejecutando,
 %% si no lo ejecuta
@@ -18,7 +19,7 @@ start()->
         %% Si no has declarado el nodo al arrancar el shell de erlang,
         %% te deja ponerle ahora un nombre
         'nonode@nohost' -> check_epmd(),
-            net_kernel:start([list_to_atom(lists:droplast(io:get_line("Server name ( name@ip ): ")))]);
+            net_kernel:start([list_to_atom(?AUX:droplast(io:get_line("Server name ( name@ip ): ")))]);
         _ -> ok
     end,
     erlang:set_cookie(node(), chat),

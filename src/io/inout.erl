@@ -3,6 +3,7 @@
 %%MÓDULO para obtener la entrada de texto. Ademas analiza si lo que entra es un comando reconocido y comprueba si se han introducido un numero
 %% valido de argumentos
 
+-define(AUX,aux).
 
 -export([get_line/0,print_Msg/2,print_error/2,print_error/1,print_info/1]).
 
@@ -14,12 +15,9 @@
 ]).
 
 
-droplast([H|[]])-> [];
-droplast([H|T]) -> [H|droplast(T)].
-
 
 get_line()->
-    S=droplast(io:get_line("")),
+    S=?AUX:droplast(io:get_line("")),
     case S of
         "" -> empty;
         _->case string:chr(S,$/) of
