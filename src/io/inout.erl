@@ -39,7 +39,7 @@ chk_comm(Input,[_|T]) -> chk_comm(Input,T).
 
 print_Msg(From,Msg)->
     M=io_lib:format("~p : ~s ~n",[From,Msg]),
-    color:print(M,blue).
+    color:print(M,cyan).
 
 
 print_error(InfoError) ->

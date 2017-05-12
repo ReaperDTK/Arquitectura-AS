@@ -17,9 +17,7 @@ start()->
 
 %%conecta con el nodo del shell del servidor, NO CON EL SERVIDOR
 connect_node(Loop)->
-    %% Pregunta el nombre para unirse a la sala
-    ?IO:print_info("Name to join chatroom? "),
-    {_,Name} = ?IO:get_line(),
+
     %% Pregunta el nombre del nodo al usuario y lo convierte a un atom.
     ?IO:print_info("Server name@ip (/exit to quit) : "),
     case ?IO:get_line() of
@@ -32,7 +30,7 @@ connect_node(Loop)->
                     %% El tiempo de espera es para asegurarse de que la conexión
                     %% se ha completado antes de hacer el global:whereis_name
                     timer:sleep(3000),
-                    con_control(Loop, Name);
+                    con_control(Loop);
                 false ->
                     ?IO:print_error("Server not found. Try Again"),
                     %% Falla al conectarse, lo reitenta
@@ -43,11 +41,11 @@ connect_node(Loop)->
         end.
 
 %% Se encarga de la conectarse correctamente con el servidor
-con_control(Loop, Name) ->
+con_control(Loop) ->
 
     %% Mensaje de registro con el PID del listen_loop para registrarlo en el
     %% servidor
-    RegUserMsg = {con, Loop, Name, self()},
+
 
     %% Comprueba si es capaz de conectarse al servidor. Si se ha conseguido
     %% conectar al nodo y el servidor está iniciado debería ir
@@ -55,16 +53,23 @@ con_control(Loop, Name) ->
         undefined ->
             %% Falla. Pregunta al cliente que quiere hacer
             ?IO:print_error("Couldn't establish connection with the server"),
-            con_control_error(Loop, Name);
+            con_control_error(Loop);
            %% Se conecta correctamente. Le envia el mensaje de registro.
         PidServer ->
             ?IO:print_info("Connecting...\n") ,
-            PidServer ! RegUserMsg,
-            case wait_for_answer() of
-                ok -> input_loop(Loop, Name);
-                _ -> connect_node(Loop)
-            end
+            reg_user_name(Loop,PidServer)
     end.
+
+reg_user_name(Loop, PidServer)->%% Pregunta el nombre para unirse a la sala
+  ?IO:print_info("Name to join chatroom? "),
+  {_,Name} = ?IO:get_line(),
+  RegUserMsg = {con, Loop, Name, self()},
+  PidServer ! RegUserMsg,
+  case wait_for_answer() of
+      ok -> input_loop(Loop, Name);
+      _ -> reg_user_name(Loop,PidServer)
+  end.
+
 
 wait_for_answer() ->
     receive
@@ -75,13 +80,13 @@ wait_for_answer() ->
             error
     end.
 
-con_control_error(Loop, Name)->
+con_control_error(Loop)->
     ?IO:print_info("Type r to retry , c to change server or q to exit"),
     case ?IO:get_line() of
         {msg, "c"} ->  connect_node(Loop);
-        {msg, "r"} ->con_control(Loop, Name);
+        {msg, "r"} ->con_control(Loop);
         {msg, "q"} -> Loop ! stop,   ok;
-        _ -> ?IO:print_error("Non suported entry."), con_control_error(Loop, Name)
+        _ -> ?IO:print_error("Non suported entry."), con_control_error(Loop)
    end.
 
 %% Loop para entrada de texto
