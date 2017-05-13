@@ -1,0 +1,11 @@
+Las primeras 2 Slides son obvias.
+
+La 3, la idea es introducir las ideas que tenemos para el diseño del sistema, aunque realmente no se va hacer todo. Las cajitas son una manera de representar que son subsistemas.
+
+
+La 4 - 5 - 6 - 7 son diagramas en los que se explica un poco más en detalle las ideas que tenemos.
+
+La 6 - 7 tiene 2 versiones, ya que consideramos ambas.
+
+Y la ultima también es obvia.
+
