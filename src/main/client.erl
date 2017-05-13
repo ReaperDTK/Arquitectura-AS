@@ -110,6 +110,12 @@ input_loop(LLoop, Name,ChatRoom)->
                 {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
                 _-> input_loop(LLoop, Name,ChatRoom)
             end;
+        {leave,_} ->
+            global:whereis_name(server) ! {join, {LLoop,Name},ChatRoom},
+            receive
+                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
+                _-> input_loop(LLoop, Name,ChatRoom)
+            end;
         {C, Args} ->
             global:whereis_name(server) ! {C, Args, {LLoop,Name},ChatRoom},
             input_loop(LLoop, Name,ChatRoom)
@@ -129,6 +135,6 @@ listen_loop()->
                 erlang:disconnect_node(Node) end,  nodes()),
             ok;
         {room_changed,NewCR} ->INFO=io_lib:format("Welcome to the ~p",[NewCR]) ,?IO:print_info(INFO), inputloop ! {ok,NewCR}, listen_loop();
-         {error,"No chatroom"} ->?IO:print_error("No Chatroom with that name"), inputloop!  {error,"No chatroom"}, listen_loop();
+         {error,ERROR} ->?IO:print_error(ERROR), inputloop!  {error,"No chatroom"}, listen_loop();
         _ -> listen_loop()
     end.

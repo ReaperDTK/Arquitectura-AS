@@ -11,7 +11,10 @@
 %% Comandos reconocidos
 -define(COMMANDS, [
     %% {comm_atom, string_representations, num_args}
-    {exit,"/exit",0},{help,"/help",0},{join,"/join",1}
+    {exit,"/exit",0},
+    {help,"/help",0},{help,"/h",0},
+    {join,"/join",1},
+    {leave,"/leave",0}
 ]).
 
 

@@ -39,12 +39,12 @@ init_srv(Control) ->
     %% Hace que cuando mandan un exit(PID, Reason) en lugar de hacer saltar
     %% una excepcion el proceso reciba un mensaje {'EXIT', From, Reason}
     process_flag(trap_exit, true),
-%    register(main,spawn(fun()-> chatroom_loop(main,[]) end)),
-    register(main,spawn(fun()-> chatroom_manager([main]) end)),
+    register(main,spawn(fun()-> chatroom_loop(main,[]) end)),
+    register(chatroom_manager,spawn(fun()-> chatroom_manager([main]) end)),
     listen_loop([], Control,[main]).
 
 create_room(Name) ->
-    server ! {create_room,Name,self()}.
+    chatroom_manager ! {create_room,Name}.
 
 get_users(Room)->
     Room ! {get_users,self()},
@@ -65,44 +65,24 @@ listen_loop(U, Control,ChatRooms)->
                     From ! {error, user_repeated},
                     listen_loop(U, Control,ChatRooms)
             end;
+        {leave,User,ChatRoom}->
+            chatroom_manager ! {join,main,User,ChatRoom},
+            listen_loop(U, Control,ChatRooms);
         %% Desconexión del servidor
         {join,Args,User,ChatRoom} ->
-            case lists:member(ChatRoom,ChatRooms) of
-                true -> ChatRoom ! {leave,User};
-                _ -> ok
-            end,
-            [String|_]=string:tokens(Args," "),
-            NewCR=list_to_atom(String),
-            {Pid,_}=User,
-            case lists:member(NewCR,ChatRooms) of
-                true -> NewCR ! {add,User} ,Pid ! {room_changed,NewCR};
-                _ -> Pid ! {error,"No chatroom"}
-            end,
+            chatroom_manager ! {join,Args,User,ChatRoom},
             listen_loop(U, Control,ChatRooms);
         {disc, A, Name,ChatRoom} ->
-            case lists:member(ChatRoom,ChatRooms) of
-                true -> ChatRoom ! {leave,{A,Name}};
-                _ -> ok
-            end,
+            catch ChatRoom ! {leave,{A,Name}},
             listen_loop([X || X <- U,  X/={A, Name}], Control,ChatRooms);
         %% Mensaje
         {msg, M, Name,ChatRoom} ->
-                io:format("Message recibed ~n"),
-                case lists:member(ChatRoom,ChatRooms) of
-                    true -> ChatRoom ! {msg, M, Name};
-                    _ -> ok
-                end,
+                catch ChatRoom ! {msg,M,Name},
+%                chatroom_manager ! {msg, M, Name,ChatRoom},
                 listen_loop(U, Control,ChatRooms);
-        {create_room,Name,Control} ->
-            try register(Name,spawn(fun()-> chatroom_loop(Name,[]) end)) of
-                true -> listen_loop(U,Control,[Name|ChatRooms]);
-                _ -> listen_loop(U,Control,ChatRooms)
-            catch
-                _ -> listen_loop(U,Control,ChatRooms)
-            end;
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
-        {'EXIT', Control, stop} ->global:unregister_name(server) , lists:foreach(fun(E) -> E ! stop end,ChatRooms), ok;
+        {'EXIT', Control, stop} ->global:unregister_name(server) , chatroom_manager ! close_manager, ok;
         %% Ignora el resto de mensajes
         _ -> listen_loop(U, Control,ChatRooms)
     end.
@@ -111,17 +91,19 @@ listen_loop(U, Control,ChatRooms)->
 
 chatroom_manager(ChatRooms) ->
     receive
+        {join,main,User,ChatRoom} ->
+            catch ChatRoom ! {leave,User},
+            {Pid,_}=User,
+            main ! {add,User} ,Pid ! {room_changed,main},
+            chatroom_manager(ChatRooms);
         {join,Args,User,ChatRoom} ->
-            case lists:member(ChatRoom,ChatRooms) of
-                true -> ChatRoom ! {leave,User};
-                _ -> ok
-            end,
+            catch ChatRoom ! {leave,User},
             [String|_]=string:tokens(Args," "),
             NewCR=list_to_atom(String),
             {Pid,_}=User,
-            case lists:member(NewCR,ChatRooms) of
-                true -> NewCR ! {add,User} ,Pid ! {room_changed,NewCR};
-                _ -> Pid ! {error,"No chatroom"}
+            case (catch NewCR ! {add,User}) of
+                {add,User} ->  Pid ! {room_changed,NewCR};
+                _ -> Pid ! {error,"No chatroom with that name"}
             end,
             chatroom_manager(ChatRooms);
         {create_room,Name} ->
@@ -131,6 +113,12 @@ chatroom_manager(ChatRooms) ->
             catch
                 _ -> chatroom_manager(ChatRooms)
             end;
+        {msg, M, Name,ChatRoom} ->
+        case lists:member(ChatRoom,ChatRooms) of
+            true -> ChatRoom ! {msg, M, Name};
+            _ -> ok
+        end,
+        chatroom_manager(ChatRooms);
         close_manager -> lists:foreach(fun(E) -> E ! stop end,ChatRooms) ,ok;
         _-> chatroom_manager(ChatRooms)
     end.
@@ -140,7 +128,6 @@ chatroom_loop(Name,Users) ->
         {add,User} -> io:format("~p~n",[Name]) ,chatroom_loop(Name,[User|Users]);
         {msg,Msg,User} ->io:format("sending msg~n"), send_msg({msg, Msg, User}, User, Users), chatroom_loop(Name,Users);
         {leave,User} -> chatroom_loop(Name,[X || X <- Users, X/=User]);
-        {getusers,From}->From ! Users;
         stop -> ok
     end.
 
