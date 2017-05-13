@@ -9,8 +9,8 @@
     - *El sistema le solicita al usuario un nombre con el que identificarse y será su nombre mientras esté en el programa.*
 - [x] **Desconexión del usuario del programa**.
     - *Logout, liberar nombre y avisar a sala.*
-- [ ] **Capacidad de cambiarse de servidor**
-    - *El usuario se puede cambiar de servidor **(¿o sala?)** en cualquier momento*
+- [x] **Capacidad de cambiarse de servidor**
+    - *El usuario puede elegir el servidor al que unirse al iniciar **
 - [ ] **Enviar mensajes a la sala**  
     - *Broadcast a users que comparten sala (lo hace el server)*
 - [ ] **Comandos**
@@ -22,3 +22,4 @@
 - [ ] **Persistencia de salas y usuarios (registro de ambos)**
 - [ ] **Configuración vía archivo**
 - [ ] **Fichero con cadenas de texto predeterminadas en distintos idiomas**
+- [x] **Seguridad via SSL**

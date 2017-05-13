@@ -1,0 +1,10 @@
+{release, {"OTP  APN 181 01","R15A"}, {erts, "8.3"},
+      [{kernel,"5.2"},
+      {stdlib,"3.3"},
+      {crypto, "3.7.3"},
+      {public_key, "1.4"},
+      {asn1, "4.0.4"},
+      {ssl, "8.1.1"}
+      ]}.
+      erl -boot start_ssl -proto_dist inet_tls -ssl_dist_opt client_certfile "cert.pem" -ssl_dist_opt server_secure_renegotiate true client_secure_renegotiate true -sname jose_test
+      erl -boot start_ssl -proto_dist inet_ssl -ssl_dist_opt server_certfile "cacerts.pem" -ssl_dist_opt verify 1 depth 1 -sname ssl_test
