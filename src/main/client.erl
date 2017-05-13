@@ -66,15 +66,15 @@ reg_user_name(Loop, PidServer)->%% Pregunta el nombre para unirse a la sala
   RegUserMsg = {con, Loop, Name, self()},
   PidServer ! RegUserMsg,
   case wait_for_answer() of
-      ok -> input_loop(Loop, Name);
+      {ok,CRoom} -> register(inputloop,self()), input_loop(Loop, Name,CRoom);
       _ -> reg_user_name(Loop,PidServer)
   end.
 
 
 wait_for_answer() ->
     receive
-        {ok, joined} ->
-            ?IO:print_info("Joined"), ok;
+        {ok, joined,CRoom} ->
+            ?IO:print_info("Joined"), {ok,CRoom};
         {error, user_repeated} ->
             ?IO:print_error("There's already an user with that name. "),
             error
@@ -90,20 +90,29 @@ con_control_error(Loop)->
    end.
 
 %% Loop para entrada de texto
-input_loop(LLoop, Name)->
+input_loop(LLoop, Name,ChatRoom)->
     ?IO:print_info(string:concat(Name, ":")),
     M=?IO:get_line(),
     case  M of
         empty ->
-            input_loop(LLoop, Name);
+            input_loop(LLoop, Name,ChatRoom);
         {error, ERROR, I}-> ?IO:print_error(ERROR, I),
-            input_loop(LLoop, Name);
+            input_loop(LLoop, Name,ChatRoom);
         {exit, _} ->
-            LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name},  ?IO:print_info("Good Bye!");
-          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name);
+            LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name,ChatRoom},  ?IO:print_info("Good Bye!");
+          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name,ChatRoom);
+        {msg,Msg} ->
+            global:whereis_name(server) ! {msg, Msg, Name,ChatRoom},
+            input_loop(LLoop, Name,ChatRoom);
+        {join,Args} ->
+            global:whereis_name(server) ! {join, Args, {LLoop,Name},ChatRoom},
+            receive
+                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
+                _-> input_loop(LLoop, Name,ChatRoom)
+            end;
         {C, Args} ->
-            global:whereis_name(server) ! {C, Args, Name},
-            input_loop(LLoop, Name)
+            global:whereis_name(server) ! {C, Args, {LLoop,Name},ChatRoom},
+            input_loop(LLoop, Name,ChatRoom)
 
     end.
 
@@ -119,5 +128,7 @@ listen_loop()->
             lists:foreach(fun(Node)->
                 erlang:disconnect_node(Node) end,  nodes()),
             ok;
+        {room_changed,NewCR} ->INFO=io_lib:format("Welcome to the ~p",[NewCR]) ,?IO:print_info(INFO), inputloop ! {ok,NewCR}, listen_loop();
+         {error,"No chatroom"} ->?IO:print_error("No Chatroom with that name"), inputloop!  {error,"No chatroom"}, listen_loop();
         _ -> listen_loop()
     end.
