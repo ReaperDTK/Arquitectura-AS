@@ -14,9 +14,8 @@
 - [x] **Enviar mensajes a la sala**  
     - *Broadcast a users que comparten sala (lo hace el server)*
 - [ ] **Comandos**
-    - *Falta descripción*
-- [ ] **crear salas desde cliente**
-    - 
+    - **Falta descripción**
+- [ ] **Crear Salas desde el cliente**
 - [ ] **Multiservidor**
 
 #### Opcional
@@ -24,5 +23,5 @@
     - *Por ejemplo mediante salas privadas.*
 - [ ] **Persistencia de salas y usuarios (registro de ambos)**
 - [ ] **Configuración vía archivo**
-- [ ] **Fichero con cadenas de texto predeterminadas en distintos idiomas**
+- [ ] **~~Fichero con cadenas de texto predeterminadas en distintos idiomas~~**
 - [x] **Seguridad via SSL**
