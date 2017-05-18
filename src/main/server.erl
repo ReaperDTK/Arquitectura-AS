@@ -97,12 +97,13 @@ chatroom_manager(ChatRooms) ->
             main ! {add,User} ,Pid ! {room_changed,main},
             chatroom_manager(ChatRooms);
         {join,Args,User,ChatRoom} ->
-            catch ChatRoom ! {leave,User},
             [String|_]=string:tokens(Args," "),
             NewCR=list_to_atom(String),
             {Pid,_}=User,
-            case (catch NewCR ! {add,User}) of
-                {add,User} ->  Pid ! {room_changed,NewCR};
+            case lists:member(NewCR,ChatRooms) of
+                true -> catch ChatRoom ! {leave,User},
+                        NewCR ! {add,User},
+                        Pid ! {room_changed,NewCR};
                 _ -> Pid ! {error,"No chatroom with that name"}
             end,
             chatroom_manager(ChatRooms);
