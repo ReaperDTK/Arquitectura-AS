@@ -34,14 +34,27 @@ start()->
 stop() ->
     exit(whereis(server), stop).
 
+init_rooms([]) ->
+    ok;
 
+init_rooms([H|T]) ->
+    chatroom_manager ! {create_room,H},
+    init_rooms(T).
+     
 init_srv(Control) ->
     %% Hace que cuando mandan un exit(PID, Reason) en lugar de hacer saltar
     %% una excepcion el proceso reciba un mensaje {'EXIT', From, Reason}
     process_flag(trap_exit, true),
     register(main,spawn(fun()-> chatroom_loop(main,[]) end)),
     register(chatroom_manager,spawn(fun()-> chatroom_manager([main]) end)),
+    init_rooms(getRooms()),
     listen_loop([], Control,[main]).
+
+    %% Recupera los nombres de las salas de un archivo.
+getRooms() ->
+	{ok, RoomList} = file:consult("./rooms.txt"),
+	% Cambiar la ruta en cada ordenador.
+	RoomList.
 
 create_room(Name) ->
     chatroom_manager ! {create_room,Name}.
