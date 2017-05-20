@@ -131,7 +131,7 @@ input_loop(LLoop, Name,ChatRoom,Server)->
                 {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)
             end;
         {leave,_} ->
-            Server ! {join, {LLoop,Name},ChatRoom},
+            Server ! {leave, {LLoop,Name},ChatRoom},
             receive
                 {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR,Server);
                 {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)

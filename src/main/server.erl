@@ -1,7 +1,7 @@
 -module(server).
 
 
--export([start/0, stop/0,create_room/1,get_users/1,start_master/0,start_sserver/1]).
+-export([start/0, stop/0,create_room/1,get_users/1,start_master/0,start_sserver/1,set_as_recovery/1]).
 
 -define(AUX,aux).
 
@@ -42,6 +42,9 @@ init_rooms([H|T]) ->
     chatroom_manager ! {create_room,H},
     init_rooms(T).
 
+stop() ->
+    exit(whereis(server), stop).
+
 %%----------------------------------------------------------------------%%
 %% IMPLEMENTACION SERVER UNICO
 %%----------------------------------------------------------------------%%
@@ -61,8 +64,7 @@ start()->
     %% Registra el pid como server globalmente, pàra todos los nodos
     global:register_name(server, Pid).
 
-stop() ->
-    exit(whereis(server), stop).
+
 
 init_srv(Control) ->
     %% Hace que cuando mandan un exit(PID, Reason) en lugar de hacer saltar
@@ -128,6 +130,14 @@ listen_loop(U, Control,ChatRooms)->
 %% IMPLEMENTACION DE MULTISERVIDOR
 %%----------------------------------------------------------------------%%
 
+set_as_recovery(Master) ->
+    erlang:set_cookie(node(), chat),
+    erlang:monitor_node(Master,true),
+    %% SI detecta que el nodo se ha caido, intenta detener el server, si existe, e inicia un nuevo master
+	receive
+		{nodedown, _} ->(catch server ! stop) , start_master(), rpc:abcast(nodes(),server,reconect)
+	end.
+
 
 start_sserver(Master)->
     erlang:set_cookie(node(), chat),
@@ -171,6 +181,7 @@ master_listen_loop(U,Control,Servers) ->
     receive
         {ping,From} -> From ! {pang,self()} , master_listen_loop(U,Control,Servers);
         {reg_server,Pid} -> io:format("Servidor registrado~n"), master_listen_loop(U,Control,[Pid|Servers]);
+        {reg_server,Pid,Users} -> io:format("Servidor registrado~n"), master_listen_loop(lists:append(U,Users),Control,[Pid|Servers]);
         {unreg_server,Pid} -> master_listen_loop(U,Control,[X|| X<- Servers, X/=Pid]);
         {con, A, Name, From} ->
             ServerNth = rand:uniform(length(Servers)),
@@ -187,7 +198,8 @@ master_listen_loop(U,Control,Servers) ->
             end;
         {disc, A, Name,ChatRoom} ->
             catch global:whereis_name(ChatRoom)! {leave,{A,Name}},
-            master_listen_loop([X || X <- U,  X/={A, Name}], Control,Servers)
+            master_listen_loop([X || X <- U,  X/={A, Name}], Control,Servers);
+        {'EXIT', Control, stop} ->global:unregister_name(server), unregister(server) , chatroom_manager ! close_manager, ok
     end.
 
 
@@ -195,11 +207,11 @@ master_listen_loop(U,Control,Servers) ->
 server_listen_loop(U, Control,ChatRooms)->
 
     receive
-        {ping,From} -> From ! {pang,self()} , server_listen_loop(U,Control,ChatRooms);
+        {ping,From} -> From ! {pang,self()} , server_listen_loop([From|U],Control,ChatRooms);
         %% LLega una peticion de conexión al servidor
         {con,Name,From} -> server_listen_loop([{Name,From}|U],Control,ChatRooms);
         {leave,User,ChatRoom}->
-            global:whereis_name(chatroom_manager) ! {join,main,User,ChatRoom},
+            chatroom_manager ! {join,main,User,ChatRoom},
             server_listen_loop(U, Control,ChatRooms);
         %% Desconexión del servidor
         {join,Args,User,ChatRoom} ->
@@ -222,10 +234,12 @@ server_listen_loop(U, Control,ChatRooms)->
             listen_loop(U, Control, ChatRooms);
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
-        {'EXIT', Control, stop} -> ok;
+        {'EXIT', Control, stop} -> unregister(server) ,  chatroom_manager ! close_manager;
+        reconect -> timer:sleep(3000), global:whereis_name(server) ! {reg_server,self(),U};
         %% Ignora el resto de mensajes
         _ -> server_listen_loop(U, Control,ChatRooms)
     end.
+
 
 
 %%----------------------------------------------------------------------%%
@@ -267,11 +281,17 @@ chatroom_manager(ChatRooms) ->
             end,
             chatroom_manager(ChatRooms);
         {create_room,Name,Pid} ->
+            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid,self()}) of
+                {create_room,Name,Pid,_} -> ok,
+                    chatroom_manager([Pid|ChatRooms]);
+                _ -> io:format("FALLA ~n") ,Pid ! stop, chatroom_manager(ChatRooms)
+            end;
+        {create_room,Name,Pid,From} ->
                 try global:register_name(Name,Pid) of
-                    yes -> chatroom_manager([Name|ChatRooms]) ;
-                    _ -> chatroom_manager(ChatRooms)
+                    yes -> chatroom_manager(ChatRooms) ;
+                    _ -> chatroom_manager(ChatRooms),From ! {failed,Pid}
                 catch
-                    _ -> chatroom_manager(ChatRooms)
+                    _ -> chatroom_manager(ChatRooms),From ! {failed,Pid}
                 end;
         {msg, M, Name,ChatRoom} ->
         case lists:member(ChatRoom,ChatRooms) of
@@ -279,7 +299,8 @@ chatroom_manager(ChatRooms) ->
             _ -> ok
         end,
         chatroom_manager(ChatRooms);
-        close_manager -> lists:foreach(fun(E) -> E ! stop end,ChatRooms) ,ok;
+        close_manager -> lists:foreach(fun(E) -> E ! stop end,ChatRooms) , ok;
+        {failed,Pid} -> Pid ! stop, chatroom_manager([X|| X <-ChatRooms, X/=Pid]);
         _-> chatroom_manager(ChatRooms)
     end.
 
