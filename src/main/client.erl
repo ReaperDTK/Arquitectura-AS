@@ -83,38 +83,41 @@ wait_for_answer() ->
 con_control_error(Loop)->
     ?IO:print_info("Type r to retry , c to change server or q to exit"),
     case ?IO:get_line() of
-        {msg, "c"} ->  connect_node(Loop);
-        {msg, "r"} ->con_control(Loop);
+        {msg, "c"} -> connect_node(Loop);
+        {msg, "r"} -> con_control(Loop);
         {msg, "q"} -> Loop ! stop,   ok;
         _ -> ?IO:print_error("Non suported entry."), con_control_error(Loop)
    end.
 
 %% Loop para entrada de texto
-input_loop(LLoop, Name,ChatRoom)->
+input_loop(LLoop, Name, ChatRoom)->
     ?IO:print_info(string:concat(Name, ":")),
-    M=?IO:get_line(),
+    M = ?IO:get_line(),
     case  M of
         empty ->
-            input_loop(LLoop, Name,ChatRoom);
+            input_loop(LLoop, Name, ChatRoom);
         {error, ERROR, I}-> ?IO:print_error(ERROR, I),
-            input_loop(LLoop, Name,ChatRoom);
+            input_loop(LLoop, Name, ChatRoom);
         {exit, _} ->
-            LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name,ChatRoom},  ?IO:print_info("Good Bye!");
-          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name,ChatRoom);
-        {msg,Msg} ->
-            global:whereis_name(server) ! {msg, Msg, Name,ChatRoom},
-            input_loop(LLoop, Name,ChatRoom);
-        {join,Args} ->
+            LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name, ChatRoom},  ?IO:print_info("Good Bye!");
+          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name, ChatRoom);
+        {msg, Msg} ->
+            global:whereis_name(server) ! {msg, Msg, Name, ChatRoom},
+            input_loop(LLoop, Name, ChatRoom);
+        {whisper, Args} ->
+            global:whereis_name(server) ! {whisper, Args, Name, ChatRoom},
+            input_loop(LLoop, Name, ChatRoom);
+        {join, Args} ->
             global:whereis_name(server) ! {join, Args, {LLoop,Name},ChatRoom},
             receive
                 {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
-                _-> input_loop(LLoop, Name,ChatRoom)
+                _-> input_loop(LLoop, Name, ChatRoom)
             end;
-        {leave,_} ->
+        {leave, _} ->
             global:whereis_name(server) ! {join, {LLoop,Name},ChatRoom},
             receive
                 {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
-                _-> input_loop(LLoop, Name,ChatRoom)
+                _-> input_loop(LLoop, Name, ChatRoom)
             end;
         {create, Args} ->
             global:whereis_name(server) ! {create, Args, {LLoop, Name}},
@@ -125,7 +128,7 @@ input_loop(LLoop, Name,ChatRoom)->
             end;
         {C, Args} ->
             global:whereis_name(server) ! {C, Args, {LLoop,Name},ChatRoom},
-            input_loop(LLoop, Name,ChatRoom)
+            input_loop(LLoop, Name, ChatRoom)
 
     end.
 

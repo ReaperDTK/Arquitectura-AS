@@ -11,10 +11,11 @@
 %% Comandos reconocidos
 -define(COMMANDS, [
     %% {comm_atom, string_representations, num_args}
-    {exit,"/exit",0},
-    {help,"/help",0},{help,"/h",0},
-    {join,"/join",1},
-    {leave,"/leave",0},
+    {exit, "/exit", 0},
+    {help, "/help", 0}, {help, "/h", 0},
+    {join, "/join", 1},
+    {leave, "/leave", 0},
+    {whisper, "/whisper", 2},
     {create, "/create", 1}
 ]).
 
@@ -26,19 +27,19 @@ get_line()->
         "" -> empty;
         _->case string:chr(S,$/) of
             1 -> chk_comm(string:tokens(S," "),?COMMANDS);
-            _ -> {msg,S}
+            _ -> {msg, S}
         end
     end.
 
 
 
-chk_comm([Input|_],[]) ->
-    {error,no_command,Input};
-chk_comm([Input|T],[{Atom,Input,Args}|_]) when Args=< length(T)->
-    {Atom,string:join(T," ")};
-chk_comm([Input|_],[{_,Input,_}|_]) ->
-    {error,number_of_arguments,Input};
-chk_comm(Input,[_|T]) -> chk_comm(Input,T).
+chk_comm([Input|_], []) ->
+   {error, no_command, Input};
+chk_comm([Input|T], [{Atom, Input, Args}|_]) when Args =< length(T)->
+    {Atom, string:join(T, " ")};
+chk_comm([Input|_], [{_, Input, _}|_]) ->
+    {error, number_of_arguments, Input};
+chk_comm(Input, [_|T]) -> chk_comm(Input, T).
 
 
 print_Msg(From,Msg)->

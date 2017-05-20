@@ -93,9 +93,11 @@ listen_loop(U, Control,ChatRooms)->
             listen_loop(U, Control, ChatRooms);
         %% Mensaje
         {msg, M, Name,ChatRoom} ->
-                catch ChatRoom ! {msg,M,Name},
+            catch ChatRoom ! {msg,M,Name},
 %                chatroom_manager ! {msg, M, Name,ChatRoom},
-                listen_loop(U, Control,ChatRooms);
+            listen_loop(U, Control,ChatRooms);
+        {whisper, Args, Name, ChatRoom} ->
+            catch ChatRoom ! {whisper, Args, Name};
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
         {'EXIT', Control, stop} ->global:unregister_name(server) , chatroom_manager ! close_manager, ok;
@@ -161,9 +163,20 @@ chatroom_loop(Name,Users) ->
     receive
         {add,User} -> io:format("~p~n",[Name]) ,chatroom_loop(Name,[User|Users]);
         {msg,Msg,User} ->io:format("sending msg~n"), send_msg({msg, Msg, User}, User, Users), chatroom_loop(Name,Users);
+        {whisper, Args, User} ->
+            [Dest|Msg] = string:tokens(Args, " "),
+            case whisper({msg, string:join(Msg, " "), User}, User, Dest, Users) of
+                {Error, Reason} -> whisper({msg, string:concat(Error, Reason), system}, system, User, Users)
+            end,
+            chatroom_loop(Name, Users);
         {leave,User} -> chatroom_loop(Name,[X || X <- Users, X/=User]);
         stop -> ok
     end.
+
+whisper(_, _, _, []) -> {"error: ", "name_does_not_exist"};
+whisper(_, Name, Name, _) -> {"error: ", "live_a_life"};
+whisper(M, _, Dest, [{H, Dest}|_]) -> H ! M, ok;
+whisper(M, Name, Dest, [_|T]) -> whisper(M, Name, Dest, T).
 
 %% Envia mensaje a los usuarios
 %% Cuando se implemente bien el tema de usuarios hay que cambiarlo puesto que el
