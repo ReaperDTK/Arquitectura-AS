@@ -97,7 +97,8 @@ listen_loop(U, Control,ChatRooms)->
 %                chatroom_manager ! {msg, M, Name,ChatRoom},
             listen_loop(U, Control,ChatRooms);
         {whisper, Args, Name, ChatRoom} ->
-            catch ChatRoom ! {whisper, Args, Name};
+            catch ChatRoom ! {whisper, Args, Name},
+            listen_loop(U, Control,ChatRooms);
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
         {'EXIT', Control, stop} ->global:unregister_name(server) , chatroom_manager ! close_manager, ok;
@@ -166,7 +167,9 @@ chatroom_loop(Name,Users) ->
         {whisper, Args, User} ->
             [Dest|Msg] = string:tokens(Args, " "),
             case whisper({msg, string:join(Msg, " "), User}, User, Dest, Users) of
-                {Error, Reason} -> whisper({msg, string:concat(Error, Reason), system}, system, User, Users)
+                {Error, Reason} ->
+                    whisper({msg, string:concat(Error, Reason), system}, system, User, Users);
+                ok -> ok
             end,
             chatroom_loop(Name, Users);
         {leave,User} -> chatroom_loop(Name,[X || X <- Users, X/=User]);
