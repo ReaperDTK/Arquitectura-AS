@@ -40,7 +40,7 @@ init_rooms([]) ->
 init_rooms([H|T]) ->
     chatroom_manager ! {create_room,H},
     init_rooms(T).
-     
+
 init_srv(Control) ->
     %% Hace que cuando mandan un exit(PID, Reason) en lugar de hacer saltar
     %% una excepcion el proceso reciba un mensaje {'EXIT', From, Reason}
@@ -52,9 +52,9 @@ init_srv(Control) ->
 
     %% Recupera los nombres de las salas de un archivo.
 getRooms() ->
-	{ok, RoomList} = file:consult("./rooms.txt"),
-	% Cambiar la ruta en cada ordenador.
-	RoomList.
+    {ok, RoomList} = file:consult("./rooms.txt"),
+    % Cambiar la ruta en cada ordenador.
+    RoomList.
 
 create_room(Name) ->
     chatroom_manager ! {create_room,Name}.
@@ -88,6 +88,9 @@ listen_loop(U, Control,ChatRooms)->
         {disc, A, Name,ChatRoom} ->
             catch ChatRoom ! {leave,{A,Name}},
             listen_loop([X || X <- U,  X/={A, Name}], Control,ChatRooms);
+        {create, Args, User} ->
+            chatroom_manager ! {create_room_client, Args, User},
+            listen_loop(U, Control, ChatRooms);
         %% Mensaje
         {msg, M, Name,ChatRoom} ->
                 catch ChatRoom ! {msg,M,Name},
@@ -127,6 +130,23 @@ chatroom_manager(ChatRooms) ->
             catch
                 _ -> chatroom_manager(ChatRooms)
             end;
+        {create_room_client, Args, User} ->
+            [String | _] = string:tokens(Args, " "),
+            NewCR = list_to_atom(String),
+            {Pid, UserName} = User,
+            case lists:member(NewCR, ChatRooms) of
+                true -> Pid ! {error, "There is already a chatroom with that name"};
+                _ ->
+                    try register(NewCR, spawn(fun()-> chatroom_loop(NewCR, []) end)) of
+                        true -> io:format("~p has created a new room: ~p~n", [UserName, NewCR]),
+                                Pid ! {room_created, NewCR},
+                                chatroom_manager([NewCR | ChatRooms]);
+                        _ -> chatroom_manager(ChatRooms)
+                    catch
+                        _ -> chatroom_manager(ChatRooms)
+                    end
+            end,
+            chatroom_manager(ChatRooms);
         {msg, M, Name,ChatRoom} ->
         case lists:member(ChatRoom,ChatRooms) of
             true -> ChatRoom ! {msg, M, Name};

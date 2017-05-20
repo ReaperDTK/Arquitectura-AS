@@ -14,7 +14,8 @@
     {exit,"/exit",0},
     {help,"/help",0},{help,"/h",0},
     {join,"/join",1},
-    {leave,"/leave",0}
+    {leave,"/leave",0},
+    {create, "/create", 1}
 ]).
 
 

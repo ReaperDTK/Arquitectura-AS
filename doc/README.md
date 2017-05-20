@@ -15,7 +15,8 @@
     - *Broadcast a users que comparten sala (lo hace el server)*
 - [ ] **Comandos**
     - **Falta descripción**
-- [ ] **Crear Salas desde el cliente**
+- [x] **Crear Salas desde el cliente**
+    - *El usuario tiene ca capacidad de crear salas, a la que luego pueden unirse otros usuarios.*
 - [ ] **Multiservidor**
 
 #### Opcional
