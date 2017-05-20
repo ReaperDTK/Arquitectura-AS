@@ -30,7 +30,7 @@ connect_node(Loop)->
                     %% El tiempo de espera es para asegurarse de que la conexión
                     %% se ha completado antes de hacer el global:whereis_name
                     timer:sleep(3000),
-                    con_control(Loop);
+                    con_control(Loop,Server);
                 false ->
                     ?IO:print_error("Server not found. Try Again"),
                     %% Falla al conectarse, lo reitenta
@@ -40,8 +40,8 @@ connect_node(Loop)->
             connect_node(Loop)
         end.
 
-%% Se encarga de la conectarse correctamente con el servidor
-con_control(Loop) ->
+ %% Se encarga de la conectarse correctamente con el servidor
+con_control_ant(Loop) ->
 
     %% Mensaje de registro con el PID del listen_loop para registrarlo en el
     %% servidor
@@ -53,11 +53,27 @@ con_control(Loop) ->
         undefined ->
             %% Falla. Pregunta al cliente que quiere hacer
             ?IO:print_error("Couldn't establish connection with the server"),
-            con_control_error(Loop);
+            con_control_error(Loop,nonode);
            %% Se conecta correctamente. Le envia el mensaje de registro.
         PidServer ->
             ?IO:print_info("Connecting...\n") ,
             reg_user_name(Loop,PidServer)
+    end.
+
+con_control(Loop,ServerNode) ->
+
+    %% Mensaje de registro con el PID del listen_loop para registrarlo en el
+    %% servidor
+    {server,ServerNode} ! {ping,self()},
+    receive
+        {pang,PidServer} ->
+            ?IO:print_info("Connecting...\n") ,
+            reg_user_name(Loop,PidServer);
+        _ -> ?IO:print_error("Couldn't establish connection with the server"),
+            con_control_error(Loop,ServerNode)
+    after
+        6000 -> ?IO:print_error("Couldn't establish connection with the server"),
+                con_control_error(Loop,ServerNode)
     end.
 
 reg_user_name(Loop, PidServer)->%% Pregunta el nombre para unirse a la sala
@@ -66,69 +82,73 @@ reg_user_name(Loop, PidServer)->%% Pregunta el nombre para unirse a la sala
   RegUserMsg = {con, Loop, Name, self()},
   PidServer ! RegUserMsg,
   case wait_for_answer() of
-      {ok,CRoom} -> register(inputloop,self()), input_loop(Loop, Name,CRoom);
+      {ok,CRoom,Server} -> register(inputloop,self()), input_loop(Loop, Name,CRoom,Server);
       _ -> reg_user_name(Loop,PidServer)
   end.
 
 
 wait_for_answer() ->
     receive
-        {ok, joined,CRoom} ->
-            ?IO:print_info("Joined"), {ok,CRoom};
+        {ok, joined,CRoom,Server} ->
+            ?IO:print_info("Joined"),
+            io:format("SUPUTAMADRE!!!!! ~n"),
+            Server ! {ping,self()},
+            {ok,CRoom,Server};
         {error, user_repeated} ->
             ?IO:print_error("There's already an user with that name. "),
             error
     end.
 
-con_control_error(Loop)->
+con_control_error(Loop,ServerNode)->
     ?IO:print_info("Type r to retry , c to change server or q to exit"),
     case ?IO:get_line() of
-        {msg, "c"} -> connect_node(Loop);
-        {msg, "r"} -> con_control(Loop);
+        {msg, "c"} ->  connect_node(Loop);
+        {msg, "r"} ->con_control(Loop,ServerNode);
         {msg, "q"} -> Loop ! stop,   ok;
-        _ -> ?IO:print_error("Non suported entry."), con_control_error(Loop)
+        _ -> ?IO:print_error("Non suported entry."), con_control_error(Loop,ServerNode)
    end.
 
 %% Loop para entrada de texto
-input_loop(LLoop, Name, ChatRoom)->
+
+input_loop(LLoop, Name,ChatRoom,Server)->
     ?IO:print_info(string:concat(Name, ":")),
     M = ?IO:get_line(),
     case  M of
         empty ->
-            input_loop(LLoop, Name, ChatRoom);
+            input_loop(LLoop, Name,ChatRoom,Server);
         {error, ERROR, I}-> ?IO:print_error(ERROR, I),
-            input_loop(LLoop, Name, ChatRoom);
+            input_loop(LLoop, Name,ChatRoom,Server);
         {exit, _} ->
-            LLoop ! stop, global:whereis_name(server) ! {disc,LLoop,Name, ChatRoom},  ?IO:print_info("Good Bye!");
-          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name, ChatRoom);
-        {msg, Msg} ->
-            global:whereis_name(server) ! {msg, Msg, Name, ChatRoom},
-            input_loop(LLoop, Name, ChatRoom);
+            LLoop ! stop, Server ! {disc,LLoop,Name,ChatRoom}, unregister(inputloop), ?IO:print_info("Good Bye!");
+          {help,_}-> ?IO:print_info("type /exit to exit the chat \n type xxx to xxxx \n"),input_loop(LLoop, Name,ChatRoom,Server);
+        {msg,Msg} ->
+            Server ! {msg, Msg, Name,ChatRoom},
+            input_loop(LLoop, Name,ChatRoom,Server);
+        {join,Args} ->
+            Server ! {join, Args, {LLoop,Name},ChatRoom},
+            receive
+                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR,Server);
+                {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)
+            end;
+        {leave,_} ->
+            Server ! {join, {LLoop,Name},ChatRoom},
+            receive
+                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR,Server);
+                {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)
+            end;
         {whisper, Args} ->
-            global:whereis_name(server) ! {whisper, Args, Name, ChatRoom},
-            input_loop(LLoop, Name, ChatRoom);
-        {join, Args} ->
-            global:whereis_name(server) ! {join, Args, {LLoop,Name},ChatRoom},
-            receive
-                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
-                _-> input_loop(LLoop, Name, ChatRoom)
-            end;
-        {leave, _} ->
-            global:whereis_name(server) ! {join, {LLoop,Name},ChatRoom},
-            receive
-                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR);
-                _-> input_loop(LLoop, Name, ChatRoom)
-            end;
+            Server ! {whisper, Args, Name, ChatRoom},
+            input_loop(LLoop, Name, ChatRoom,Server);
         {create, Args} ->
-            global:whereis_name(server) ! {create, Args, {LLoop, Name}},
+            Server ! {create, Args, {LLoop, Name}},
             receive
                 {ok, NEWCR} -> io:format("~p~n", [NEWCR]),
-                               input_loop(LLoop, Name, NEWCR);
-                _ -> input_loop(LLoop, Name, ChatRoom)
+                               input_loop(LLoop, Name, NEWCR,Server);
+                _ -> input_loop(LLoop, Name, ChatRoom,Server)
             end;
         {C, Args} ->
-            global:whereis_name(server) ! {C, Args, {LLoop,Name},ChatRoom},
-            input_loop(LLoop, Name, ChatRoom)
+            Server ! {C, Args, {LLoop,Name},ChatRoom},
+            input_loop(LLoop, Name,ChatRoom,Server)
 
     end.
 
@@ -149,6 +169,6 @@ listen_loop()->
                                  ?IO:print_info(INFO),
                                  inputloop ! {ok, NewCR},
                                  listen_loop();
-         {error,ERROR} ->?IO:print_error(ERROR), inputloop!  {error,"No chatroom"}, listen_loop();
+         {error,ERROR} ->?IO:print_error(ERROR), inputloop!  {error,ERROR}, listen_loop();
         _ -> listen_loop()
     end.

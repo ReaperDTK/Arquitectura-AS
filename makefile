@@ -10,10 +10,10 @@ clean:
 	rm ./bin/*.beam
 
 run:
-	erl  -pz $(OUT) -name $(name)
+	erl  -pz $(OUT)  -name $(name)
 
 run_ssl_server:
 	erl   -pz $(OUT) -s ssl start -proto_dist inet_tls $(SSL_CERT) -name $(name)
 
 run_ssl_client:
-	erl   -pz $(OUT) -s ssl start -proto_dist inet_tls -name $(name)
+	erl   -pz $(OUT) -s ssl start -run client start -s init stop -proto_dist inet_tls $(SSL_CERT) -name $(name) -hidden -noshell

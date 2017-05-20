@@ -21,14 +21,14 @@ y
     make run name=nombreserver@ipserver
 
 
-Utilizando despues las funciones de los módulos **client** y **server** tal como se explica en [src/main ](https://github.com/ReaperDTK/Arquitectura-AS/blob/master/src/main/README.md)
+Utilizando despues las funciones del modulo **server** tal como se explica en [src/main ](https://github.com/ReaperDTK/Arquitectura-AS/blob/master/src/main/README.md) (El cliente se inicia solo)
 
 #### SSL
 
 Para iniciar SSL , se tiene que usar en un terminal en la raíz del proyecto
 
     make run_ssl_server name=servername@ipserver
-    
+
 y
 
     make run_ssl_client name=clientname@ipclient
