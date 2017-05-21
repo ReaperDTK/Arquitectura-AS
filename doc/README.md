@@ -27,3 +27,13 @@
 - [ ] **Configuración vía archivo**
 - [ ] **~~Fichero con cadenas de texto predeterminadas en distintos idiomas~~**
 - [x] **Seguridad via SSL**
+
+#### Mejoras estéticas
+
+- [] **El servidor avisa a la sala (broadcast) en los siguientes casos:**
+    - [] *Un usuario se ha unido a la sala.*
+    - [] *Un usuario ha abandonado la sala.*
+    - [] *Se ha creado una nueva sala.*
+- [] **Cuando se usa SSL se muestra un mensaje similar a Whatsapp: "Los mensajes que envías están seguros con cifrado de extremo a extremo."**
+- [] **Añadir operación en el módulo `client` para que pueda obtener la lista de salas disponibles.**
+    
