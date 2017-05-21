@@ -13,16 +13,17 @@
     - *El usuario puede elegir el servidor al que unirse al iniciar **
 - [x] **Enviar mensajes a la sala**  
     - *Broadcast a users que comparten sala (lo hace el server)*
-- [ ] **Comandos**
+- [x] **Comandos**
     - **Falta descripción**
 - [x] **Crear Salas desde el cliente**
     - *El usuario tiene ca capacidad de crear salas, a la que luego pueden unirse otros usuarios.*
-- [ ] **Multiservidor**
-
+- [x] **Multiservidor**
+    - *Existe una red de servidores. El cliente se conecta a un server maestro, y este asignará al cliente a un servidor*
 #### Opcional
-- [ ] **Comunicación privada entre usuarios**
+- [x] **Comunicación privada entre usuarios**
     - *Por ejemplo mediante salas privadas.*
 - [ ] **Persistencia de salas y usuarios (registro de ambos)**
+- [x] **Iniciar servidor con salas ya creadas (indicadas en un archivo)**
 - [ ] **Configuración vía archivo**
 - [ ] **~~Fichero con cadenas de texto predeterminadas en distintos idiomas~~**
 - [x] **Seguridad via SSL**
