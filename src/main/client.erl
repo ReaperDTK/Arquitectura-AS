@@ -41,24 +41,7 @@ connect_node(Loop)->
         end.
 
  %% Se encarga de la conectarse correctamente con el servidor
-con_control_ant(Loop) ->
 
-    %% Mensaje de registro con el PID del listen_loop para registrarlo en el
-    %% servidor
-
-
-    %% Comprueba si es capaz de conectarse al servidor. Si se ha conseguido
-    %% conectar al nodo y el servidor está iniciado debería ir
-    case global:whereis_name(server) of
-        undefined ->
-            %% Falla. Pregunta al cliente que quiere hacer
-            ?IO:print_error("Couldn't establish connection with the server"),
-            con_control_error(Loop,nonode);
-           %% Se conecta correctamente. Le envia el mensaje de registro.
-        PidServer ->
-            ?IO:print_info("Connecting...\n") ,
-            reg_user_name(Loop,PidServer)
-    end.
 
 con_control(Loop,ServerNode) ->
 
@@ -91,7 +74,6 @@ wait_for_answer() ->
     receive
         {ok, joined,CRoom,Server} ->
             ?IO:print_info("Joined"),
-            io:format("SUPUTAMADRE!!!!! ~n"),
             Server ! {ping,self()},
             {ok,CRoom,Server};
         {error, user_repeated} ->
@@ -127,13 +109,13 @@ input_loop(LLoop, Name,ChatRoom,Server)->
         {join,Args} ->
             Server ! {join, Args, {LLoop,Name},ChatRoom},
             receive
-                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR,Server);
+                {ok,NEWCR} -> input_loop(LLoop,Name,NEWCR,Server);
                 {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)
             end;
         {leave,_} ->
             Server ! {leave, {LLoop,Name},ChatRoom},
             receive
-                {ok,NEWCR} -> io:format("~p~n",[NEWCR]),input_loop(LLoop,Name,NEWCR,Server);
+                {ok,NEWCR} -> input_loop(LLoop,Name,NEWCR,Server);
                 {error,_}-> input_loop(LLoop, Name,ChatRoom,Server)
             end;
         {whisper, Args} ->
@@ -142,7 +124,7 @@ input_loop(LLoop, Name,ChatRoom,Server)->
         {create, Args} ->
             Server ! {create, Args, {LLoop, Name}},
             receive
-                {ok, NEWCR} -> io:format("~p~n", [NEWCR]),
+                {ok, NEWCR} ->
                                input_loop(LLoop, Name, NEWCR,Server);
                 _ -> input_loop(LLoop, Name, ChatRoom,Server)
             end;
