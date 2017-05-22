@@ -128,6 +128,7 @@ input_loop(LLoop, Name,ChatRoom,Server)->
                                input_loop(LLoop, Name, NEWCR,Server);
                 _ -> input_loop(LLoop, Name, ChatRoom,Server)
             end;
+        {available_rooms,_}-> Server ! {available_rooms,LLoop} ,input_loop(LLoop, Name,ChatRoom,Server);
         {C, Args} ->
             Server ! {C, Args, {LLoop,Name},ChatRoom},
             input_loop(LLoop, Name,ChatRoom,Server)
@@ -152,5 +153,6 @@ listen_loop()->
                                  inputloop ! {ok, NewCR},
                                  listen_loop();
          {error,ERROR} ->?IO:print_error(ERROR), inputloop!  {error,ERROR}, listen_loop();
+         {info,INFO} -> ?IO:print_info(INFO) , listen_loop();
         _ -> listen_loop()
     end.

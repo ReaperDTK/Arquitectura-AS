@@ -16,7 +16,8 @@
     {join, "/join", 1},
     {leave, "/leave", 0},
     {whisper, "/whisper", 2},
-    {create, "/create", 1}
+    {create, "/create", 1},
+    {available_rooms,"/available_rooms",0}
 ]).
 
 

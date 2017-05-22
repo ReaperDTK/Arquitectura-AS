@@ -74,7 +74,7 @@ init_srv(Control) ->
     register(chatroom_manager,spawn(fun()-> chatroom_manager([main]) end)),
     global:register_name(main,whereis(main)),
     global:register_name(chatroom_manager,whereis(chatroom_manager)),
-    init_rooms(getRooms()),
+    catch init_rooms(getRooms()),
     listen_loop([], Control,[main]).
 
 
@@ -116,6 +116,8 @@ listen_loop(U, Control,ChatRooms)->
         {whisper, Args, Name, ChatRoom} ->
             catch global:whereis_name(ChatRoom) ! {whisper, Args, Name},
             listen_loop(U, Control,ChatRooms);
+        {available_rooms,User} -> catch (global:whereis_name(chatroom_manager) ! {get_rooms,User}),
+            listen_loop(U, Control, ChatRooms);
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
         {'EXIT', Control, stop} ->global:unregister_name(server) , chatroom_manager ! close_manager, ok;
@@ -219,6 +221,7 @@ server_listen_loop(U, Control,ChatRooms)->
             server_listen_loop(U, Control,ChatRooms);
         {disc, A, Name,ChatRoom} ->
             catch global:whereis_name(server) ! {disc, A, Name,ChatRoom},
+            catch global:whereis_name(ChatRoom) ! {leave, Name},
             server_listen_loop([X || X <- U,  X/={A, Name}], Control,ChatRooms);
         %% Mensaje
         {msg, M, Name,ChatRoom} ->
@@ -228,10 +231,12 @@ server_listen_loop(U, Control,ChatRooms)->
                 server_listen_loop(U, Control,ChatRooms);
         {whisper, Args, Name, ChatRoom} ->
             catch global:whereis_name(ChatRoom) ! {whisper, Args, Name},
-            listen_loop(U, Control,ChatRooms);
+            server_listen_loop(U, Control,ChatRooms);
         {create, Args, User} ->
             chatroom_manager ! {create_room_client, Args, User},
-            listen_loop(U, Control, ChatRooms);
+            server_listen_loop(U, Control, ChatRooms);
+        {available_rooms,User} -> catch (global:whereis_name(chatroom_manager) ! {get_rooms,User}),
+            server_listen_loop(U, Control, ChatRooms);
         %% Controla que el unico proceso que puede cerrar el servidor es el que
         %% lo ha creado
         {'EXIT', Control, stop} -> unregister(server) ,  chatroom_manager ! close_manager;
@@ -266,29 +271,22 @@ chatroom_manager(ChatRooms) ->
             chatroom_manager(ChatRooms);
         {create_room,Name} ->
             Pid=spawn(fun()-> chatroom_loop(Name,[]) end),
-            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid}) of
-                {create_room,Name,Pid} -> ok;
-                _ -> io:format("FALLA ~n") ,Pid ! stop
-            end,
-            chatroom_manager(ChatRooms);
+            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid,self()}) of
+                {create_room,Name,Pid,_} -> chatroom_manager([Name |ChatRooms]);
+                _ -> io:format("FALLA ~n") ,Pid ! stop, chatroom_manager(ChatRooms)
+            end;
         {create_room_client, Args, _} ->
             [String | _] = string:tokens(Args, " "),
             Name = list_to_atom(String),
             Pid=spawn(fun()-> chatroom_loop(Name,[]) end),
-            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid}) of
-                {create_room,Name,Pid} -> ok;
+            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid,self()}) of
+                {create_room,Name,Pid,_} -> ok;
                 _ -> io:format("FALLA ~n") ,Pid ! stop
             end,
             chatroom_manager(ChatRooms);
-        {create_room,Name,Pid} ->
-            case (catch global:whereis_name(chatroom_manager) ! {create_room,Name,Pid,self()}) of
-                {create_room,Name,Pid,_} -> ok,
-                    chatroom_manager([Pid|ChatRooms]);
-                _ -> io:format("FALLA ~n") ,Pid ! stop, chatroom_manager(ChatRooms)
-            end;
         {create_room,Name,Pid,From} ->
                 try global:register_name(Name,Pid) of
-                    yes -> chatroom_manager(ChatRooms) ;
+                    yes -> chatroom_manager([Name |ChatRooms]) ;
                     _ -> chatroom_manager(ChatRooms),From ! {failed,Pid}
                 catch
                     _ -> chatroom_manager(ChatRooms),From ! {failed,Pid}
@@ -299,15 +297,23 @@ chatroom_manager(ChatRooms) ->
             _ -> ok
         end,
         chatroom_manager(ChatRooms);
-        close_manager -> lists:foreach(fun(E) -> E ! stop end,ChatRooms) , ok;
+        close_manager -> lists:foreach(fun(E) -> catch (global:whereis_name(E) ! stop) end,ChatRooms) , ok;
         {failed,Pid} -> Pid ! stop, chatroom_manager([X|| X <-ChatRooms, X/=Pid]);
+        {get_rooms,User} -> User ! {info,io_lib:format("ChatRooms ~p ",[ChatRooms])}, chatroom_manager(ChatRooms);
         _-> chatroom_manager(ChatRooms)
     end.
 
 chatroom_loop(Name,Users) ->
     receive
-        {add,User} -> io:format("~p~n",[Name]) ,chatroom_loop(Name,[User|Users]);
-        {msg,Msg,User} ->io:format("sending msg~n"), send_msg({msg, Msg, User}, User, Users), chatroom_loop(Name,Users);
+        {add,User} ->
+            io:format("~p~n",[Name]),
+            {_,UserName}=User, Msg=io_lib:format("~s Joined the ChatRoom~n",[UserName]),
+            send_msg({info,Msg},User,Users) ,
+            chatroom_loop(Name,[User|Users]);
+        {msg,Msg,User} ->
+            io:format("sending msg~n"),
+            send_msg({msg, Msg, User}, User, Users),
+            chatroom_loop(Name,Users);
         {whisper, Args, User} ->
             [Dest|Msg] = string:tokens(Args, " "),
             case whisper({msg, string:join(Msg, " "), User}, User, Dest, Users) of
@@ -316,7 +322,11 @@ chatroom_loop(Name,Users) ->
                 ok -> ok
             end,
             chatroom_loop(Name, Users);
-        {leave,User} -> io:format("someones leaves ~p~n",[Name]), chatroom_loop(Name,[X || X <- Users, X/=User]);
+        {leave,User} ->
+            io:format("someones leaves ~p~n",[Name]),
+            {_,UserName}=User, Msg=io_lib:format("~s left ~p chatroom ~n",[UserName,Name]),
+            send_msg({info,Msg},User,Users),
+            chatroom_loop(Name,[X || X <- Users, X/=User]);
         stop -> ok
     end.
 
