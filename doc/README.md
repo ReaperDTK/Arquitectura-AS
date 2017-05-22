@@ -19,6 +19,7 @@
     - *El usuario tiene ca capacidad de crear salas, a la que luego pueden unirse otros usuarios.*
 - [x] **Multiservidor**
     - *Existe una red de servidores. El cliente se conecta a un server maestro, y este asignará al cliente a un servidor*
+- [ ] **Configuración de salas vía archivo: Hacer que no pete si no hay archivo.**
 #### Opcional
 - [x] **Comunicación privada entre usuarios**
     - *Por ejemplo mediante salas privadas.*
