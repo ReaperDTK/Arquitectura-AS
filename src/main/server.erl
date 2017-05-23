@@ -175,7 +175,7 @@ init_mltsrv(Control) ->
         P=spawn(fun()-> chatroom_manager([main]) end),
         register(chatroom_manager,P),
         global:register_name(chatroom_manager,P),
-        init_rooms(getRooms()),
+        catch init_rooms(getRooms()),
         master_listen_loop([], Control,[]).
 
 %% MULTISERVIDOR : SERVER MAESTRO BALANCEADOR DE CARGA
