@@ -151,6 +151,7 @@ start_sserver(Master)->
     register(server, Pid).
 
 start_master()->
+    random:seed(now()),	
     erlang:set_cookie(node(), chat),
     Control=self(),
     Pid = spawn(fun() ->   init_mltsrv(Control) end),
@@ -186,7 +187,7 @@ master_listen_loop(U,Control,Servers) ->
         {reg_server,Pid,Users} -> io:format("Servidor registrado~n"), master_listen_loop(lists:append(U,Users),Control,[Pid|Servers]);
         {unreg_server,Pid} -> master_listen_loop(U,Control,[X|| X<- Servers, X/=Pid]);
         {con, A, Name, From} ->
-            ServerNth = rand:uniform(length(Servers)),
+            ServerNth = random:uniform(length(Servers)),
             Server = lists:nth(ServerNth,Servers),
             io:format("~p ~p ~n",[ServerNth,Server]),
             case add_user(A, Name, U) of
